@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "master"
+  pull_request:
+    branches:
+      - "master"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: |
+          pnpm install
+          pnpm add -D @angular-eslint/builder @angular-eslint/eslint-plugin @angular-eslint/eslint-plugin-template @angular-eslint/template-parser
+
+      - name: Install Angular CLI
+        run: pnpm add -g @angular/cli
+
+      - name: Lint
+        run: pnpm ng lint
+
+      - name: Build
+        run: pnpm build
+
+      # - name: Create Release Pull Request
+      #   id: changesets
+      #   uses: changesets/action@v1
+      #   with:
+      #     version: pnpm changeset version
+      #     commit: "chore: version packages"
+      #     title: "chore: version packages"
+      #   env:
+          # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
