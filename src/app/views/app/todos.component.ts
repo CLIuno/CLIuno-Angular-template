@@ -1,48 +1,145 @@
-import { Component, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core'
+import { Component, OnInit } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { RouterLink } from '@angular/router'
+import { NgIcon, provideIcons } from '@ng-icons/core'
+import { lucidePlus, lucideClipboardCheck, lucideUser, lucideTrash2 } from '@ng-icons/lucide'
 import { TodoApiService } from '../../services/todo-api.service'
 import { AuthStore } from '../../services/auth.store'
 import { timeAgo } from '../../utils/helpers'
 import { Todo } from '../../types/models'
+import { HlmButton } from '@spartan-ng/helm/button'
+import { HlmCard, HlmCardContent } from '@spartan-ng/helm/card'
+import { HlmCheckbox } from '@spartan-ng/helm/checkbox'
+import { HlmInput } from '@spartan-ng/helm/input'
+import { HlmLabel } from '@spartan-ng/helm/label'
+import { HlmTextarea } from '@spartan-ng/helm/textarea'
+import { HlmSpinner } from '@spartan-ng/helm/spinner'
+import {
+  HlmDialog,
+  HlmDialogContent,
+  HlmDialogHeader,
+  HlmDialogTitle,
+  HlmDialogFooter,
+} from '@spartan-ng/helm/dialog'
+import { BrnDialogTrigger, BrnDialogContent, BrnDialogClose } from '@spartan-ng/brain/dialog'
 
 @Component({
   selector: 'app-todos',
   standalone: true,
-  imports: [FormsModule, RouterLink],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [
+    FormsModule,
+    RouterLink,
+    NgIcon,
+    HlmButton,
+    HlmCard,
+    HlmCardContent,
+    HlmCheckbox,
+    HlmInput,
+    HlmLabel,
+    HlmTextarea,
+    HlmSpinner,
+    HlmDialog,
+    HlmDialogContent,
+    HlmDialogHeader,
+    HlmDialogTitle,
+    HlmDialogFooter,
+    BrnDialogTrigger,
+    BrnDialogContent,
+    BrnDialogClose,
+  ],
+  viewProviders: [provideIcons({ lucidePlus, lucideClipboardCheck, lucideUser, lucideTrash2 })],
   template: `
-    <div class="tw:max-w-4xl tw:mx-auto tw:px-4 tw:py-8">
+    <div class="mx-auto max-w-4xl px-4 py-8">
       <!-- Header -->
-      <div class="tw:flex tw:items-center tw:justify-between tw:mb-8">
+      <div class="mb-8 flex items-center justify-between">
         <div>
-          <h1 class="tw:text-3xl tw:font-bold tw:text-base-content">Todos</h1>
-          <p class="tw:text-base-content/60">Manage your tasks and collaborate with others</p>
+          <h1 class="text-3xl font-bold">Todos</h1>
+          <p class="text-muted-foreground">Manage your tasks and collaborate with others</p>
         </div>
-        <button (click)="showCreateModal = true" class="tw:btn tw:btn-primary">
-          <iconify-icon icon="mdi:plus" width="20"></iconify-icon>
-          New Todo
-        </button>
+
+        <hlm-dialog #createDialog="hlmDialog">
+          <button type="button" hlmBtn brnDialogTrigger>
+            <ng-icon name="lucidePlus" size="18px" />
+            New Todo
+          </button>
+          <hlm-dialog-content *brnDialogContent="let ctx">
+            <hlm-dialog-header>
+              <h3 hlmDialogTitle>Create New Todo</h3>
+            </hlm-dialog-header>
+            <form (ngSubmit)="createTodo(createDialog)" class="space-y-4">
+              <div class="space-y-2">
+                <label hlmLabel for="new-todo-title">Title</label>
+                <input
+                  hlmInput
+                  id="new-todo-title"
+                  [(ngModel)]="newTitle"
+                  name="title"
+                  type="text"
+                  placeholder="Todo title"
+                  class="w-full"
+                  required
+                />
+              </div>
+              <div class="space-y-2">
+                <label hlmLabel for="new-todo-description">Description</label>
+                <textarea
+                  hlmTextarea
+                  id="new-todo-description"
+                  [(ngModel)]="newDescription"
+                  name="description"
+                  placeholder="Optional description"
+                  class="w-full"
+                  rows="3"
+                ></textarea>
+              </div>
+              <hlm-dialog-footer>
+                <button type="button" brnDialogClose hlmBtn variant="outline">Cancel</button>
+                <button type="submit" hlmBtn [disabled]="creating">
+                  @if (creating) {
+                    <hlm-spinner class="size-4" />
+                  }
+                  {{ creating ? 'Creating...' : 'Create' }}
+                </button>
+              </hlm-dialog-footer>
+            </form>
+          </hlm-dialog-content>
+        </hlm-dialog>
       </div>
 
       <!-- Filters -->
-      <div class="tw:tabs tw:tabs-boxed tw:mb-6 tw:w-fit">
-        <button class="tw:tab" [class.tw:tab-active]="filter === 'all'" (click)="filter = 'all'">
+      <div class="mb-6 inline-flex w-fit items-center gap-1 rounded-md border p-1">
+        <button
+          type="button"
+          hlmBtn
+          [variant]="filter === 'all' ? 'default' : 'ghost'"
+          size="sm"
+          (click)="filter = 'all'"
+        >
           All
         </button>
-        <button class="tw:tab" [class.tw:tab-active]="filter === 'mine'" (click)="filter = 'mine'">
+        <button
+          type="button"
+          hlmBtn
+          [variant]="filter === 'mine' ? 'default' : 'ghost'"
+          size="sm"
+          (click)="filter = 'mine'"
+        >
           Mine
         </button>
         <button
-          class="tw:tab"
-          [class.tw:tab-active]="filter === 'active'"
+          type="button"
+          hlmBtn
+          [variant]="filter === 'active' ? 'default' : 'ghost'"
+          size="sm"
           (click)="filter = 'active'"
         >
           Active
         </button>
         <button
-          class="tw:tab"
-          [class.tw:tab-active]="filter === 'completed'"
+          type="button"
+          hlmBtn
+          [variant]="filter === 'completed' ? 'default' : 'ghost'"
+          size="sm"
           (click)="filter = 'completed'"
         >
           Completed
@@ -51,162 +148,79 @@ import { Todo } from '../../types/models'
 
       <!-- Loading -->
       @if (loading) {
-        <div class="tw:flex tw:justify-center tw:py-20">
-          <span class="tw:loading tw:loading-spinner tw:loading-lg tw:text-primary"></span>
+        <div class="flex justify-center py-20">
+          <hlm-spinner class="size-8 text-primary" />
         </div>
       }
 
       <!-- Empty State -->
       @if (!loading && filteredTodos.length === 0) {
-        <div class="tw:text-center tw:py-20">
-          <iconify-icon
-            icon="mdi:clipboard-check-outline"
-            width="64"
-            class="tw:mx-auto tw:text-base-content/30"
-          ></iconify-icon>
-          <h3 class="tw:text-xl tw:font-semibold tw:mt-4">No todos yet</h3>
-          <p class="tw:text-base-content/60 tw:mt-2">Create your first todo to get started!</p>
+        <div class="py-20 text-center">
+          <ng-icon
+            name="lucideClipboardCheck"
+            size="64px"
+            class="mx-auto text-muted-foreground/40"
+          />
+          <h3 class="mt-4 text-xl font-semibold">No todos yet</h3>
+          <p class="mt-2 text-muted-foreground">Create your first todo to get started!</p>
         </div>
       }
 
       <!-- List -->
       @if (!loading && filteredTodos.length > 0) {
-        <div class="tw:space-y-3">
+        <div class="space-y-3">
           @for (todo of filteredTodos; track todo.id) {
-            <div
-              class="tw:card tw:bg-base-100 tw:shadow-sm hover:tw:shadow-md tw:transition-shadow"
-            >
-              <div class="tw:card-body tw:p-4">
-                <div class="tw:flex tw:items-start tw:gap-3">
-                  <!-- Checkbox -->
-                  @if (todo.user.id === authStore.user()?.id) {
-                    <button (click)="toggleTodo(todo.id)" class="tw:mt-1 tw:shrink-0">
-                      <iconify-icon
-                        [icon]="
-                          todo.is_completed
-                            ? 'mdi:checkbox-marked-circle'
-                            : 'mdi:checkbox-blank-circle-outline'
-                        "
-                        width="24"
-                        [class]="todo.is_completed ? 'tw:text-success' : 'tw:text-base-content/30'"
-                      ></iconify-icon>
-                    </button>
-                  } @else {
-                    <div class="tw:mt-1 tw:shrink-0">
-                      <iconify-icon
-                        [icon]="
-                          todo.is_completed
-                            ? 'mdi:checkbox-marked-circle'
-                            : 'mdi:checkbox-blank-circle-outline'
-                        "
-                        width="24"
-                        [class]="todo.is_completed ? 'tw:text-success' : 'tw:text-base-content/30'"
-                      ></iconify-icon>
-                    </div>
-                  }
+            <div hlmCard class="transition-shadow hover:shadow-md">
+              <div hlmCardContent class="flex items-start gap-3">
+                <hlm-checkbox
+                  class="mt-1"
+                  [checked]="todo.is_completed"
+                  [disabled]="todo.user.id !== authStore.user()?.id"
+                  (checkedChange)="toggleTodo(todo.id)"
+                />
 
-                  <!-- Content -->
-                  <div class="tw:flex-1 tw:min-w-0">
-                    <a [routerLink]="['/todos', todo.id]">
-                      <h3
-                        class="tw:font-semibold tw:text-lg hover:tw:text-primary tw:transition-colors"
-                        [class.tw:line-through]="todo.is_completed"
-                        [class.tw:opacity-60]="todo.is_completed"
-                      >
-                        {{ todo.title }}
-                      </h3>
-                    </a>
-                    @if (todo.description) {
-                      <p class="tw:text-base-content/60 tw:text-sm tw:mt-1 tw:line-clamp-2">
-                        {{ todo.description }}
-                      </p>
-                    }
-                    <div
-                      class="tw:flex tw:items-center tw:gap-4 tw:mt-2 tw:text-sm tw:text-base-content/50"
+                <div class="min-w-0 flex-1">
+                  <a [routerLink]="['/todos', todo.id]">
+                    <h3
+                      class="text-lg font-semibold transition-colors hover:text-primary"
+                      [class.line-through]="todo.is_completed"
+                      [class.text-muted-foreground]="todo.is_completed"
                     >
-                      <a
-                        [routerLink]="['/users', todo.user.id]"
-                        class="tw:flex tw:items-center tw:gap-1 hover:tw:text-primary"
-                      >
-                        <iconify-icon icon="mdi:account" width="16"></iconify-icon>
-                        {{ todo.user.username }}
-                      </a>
-                      <span>{{ timeAgo(todo.createdAt) }}</span>
-                    </div>
-                  </div>
-
-                  <!-- Actions -->
-                  @if (todo.user.id === authStore.user()?.id) {
-                    <div class="tw:dropdown tw:dropdown-end">
-                      <button class="tw:btn tw:btn-ghost tw:btn-sm tw:btn-circle">
-                        <iconify-icon icon="mdi:dots-vertical" width="20"></iconify-icon>
-                      </button>
-                      <ul
-                        class="tw:dropdown-content tw:menu tw:p-2 tw:shadow tw:bg-base-100 tw:rounded-box tw:w-40 tw:z-10"
-                      >
-                        <li>
-                          <a [routerLink]="['/todos', todo.id]"
-                            ><iconify-icon icon="mdi:eye" width="16"></iconify-icon> View</a
-                          >
-                        </li>
-                        <li>
-                          <button (click)="deleteTodo(todo.id)" class="tw:text-error">
-                            <iconify-icon icon="mdi:delete" width="16"></iconify-icon> Delete
-                          </button>
-                        </li>
-                      </ul>
-                    </div>
+                      {{ todo.title }}
+                    </h3>
+                  </a>
+                  @if (todo.description) {
+                    <p class="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                      {{ todo.description }}
+                    </p>
                   }
+                  <div class="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
+                    <a
+                      [routerLink]="['/users', todo.user.id]"
+                      class="flex items-center gap-1 hover:text-primary"
+                    >
+                      <ng-icon name="lucideUser" size="16px" />
+                      {{ todo.user.username }}
+                    </a>
+                    <span>{{ timeAgo(todo.createdAt) }}</span>
+                  </div>
                 </div>
+
+                @if (todo.user.id === authStore.user()?.id) {
+                  <button
+                    type="button"
+                    hlmBtn
+                    variant="ghost"
+                    size="icon-sm"
+                    (click)="deleteTodo(todo.id)"
+                    aria-label="Delete todo"
+                  >
+                    <ng-icon name="lucideTrash2" size="16px" />
+                  </button>
+                }
               </div>
             </div>
           }
-        </div>
-      }
-
-      <!-- Create Modal -->
-      @if (showCreateModal) {
-        <div class="tw:modal tw:modal-open">
-          <div class="tw:modal-box">
-            <h3 class="tw:font-bold tw:text-lg tw:mb-4">Create New Todo</h3>
-            <form (ngSubmit)="createTodo()" class="tw:space-y-4">
-              <div class="tw:form-control">
-                <div class="tw:label"><span class="tw:label-text">Title</span></div>
-                <input
-                  [(ngModel)]="newTitle"
-                  name="title"
-                  type="text"
-                  placeholder="Todo title"
-                  class="tw:input tw:input-bordered tw:w-full"
-                  required
-                />
-              </div>
-              <div class="tw:form-control">
-                <div class="tw:label"><span class="tw:label-text">Description</span></div>
-                <textarea
-                  [(ngModel)]="newDescription"
-                  name="description"
-                  placeholder="Optional description"
-                  class="tw:textarea tw:textarea-bordered tw:w-full"
-                  rows="3"
-                ></textarea>
-              </div>
-              <div class="tw:modal-action">
-                <button type="button" (click)="showCreateModal = false" class="tw:btn">
-                  Cancel
-                </button>
-                <button type="submit" class="tw:btn tw:btn-primary" [disabled]="creating">
-                  {{ creating ? 'Creating...' : 'Create' }}
-                </button>
-              </div>
-            </form>
-          </div>
-          <div
-            class="tw:modal-backdrop"
-            (click)="showCreateModal = false"
-            (keydown.escape)="showCreateModal = false"
-            tabindex="-1"
-          ></div>
         </div>
       }
     </div>
@@ -215,7 +229,6 @@ import { Todo } from '../../types/models'
 export class TodosComponent implements OnInit {
   todos: Todo[] = []
   loading = true
-  showCreateModal = false
   newTitle = ''
   newDescription = ''
   creating = false
@@ -253,15 +266,15 @@ export class TodosComponent implements OnInit {
     })
   }
 
-  createTodo() {
+  createTodo(dialog: { close: () => void }) {
     if (!this.newTitle.trim()) return
     this.creating = true
     this.todoApi.createTodo({ title: this.newTitle, description: this.newDescription }).subscribe({
       next: () => {
         this.newTitle = ''
         this.newDescription = ''
-        this.showCreateModal = false
         this.creating = false
+        dialog.close()
         this.fetchTodos()
       },
       error: () => {

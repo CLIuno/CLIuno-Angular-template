@@ -1,108 +1,142 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core'
+import { Component } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { RouterLink } from '@angular/router'
+import { NgIcon, provideIcons } from '@ng-icons/core'
+import {
+  lucideRocket,
+  lucideCircleAlert,
+  lucideEye,
+  lucideEyeOff,
+  lucideLogIn,
+  lucideUserPlus,
+} from '@ng-icons/lucide'
 import { AuthStore } from '../../services/auth.store'
+import { HlmButton } from '@spartan-ng/helm/button'
+import { HlmInput } from '@spartan-ng/helm/input'
+import { HlmLabel } from '@spartan-ng/helm/label'
+import {
+  HlmCard,
+  HlmCardHeader,
+  HlmCardTitle,
+  HlmCardDescription,
+  HlmCardContent,
+} from '@spartan-ng/helm/card'
+import { HlmAlert, HlmAlertIcon, HlmAlertDescription } from '@spartan-ng/helm/alert'
+import { HlmSeparator } from '@spartan-ng/helm/separator'
+import { HlmSpinner } from '@spartan-ng/helm/spinner'
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule, RouterLink],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [
+    FormsModule,
+    RouterLink,
+    NgIcon,
+    HlmButton,
+    HlmInput,
+    HlmLabel,
+    HlmCard,
+    HlmCardHeader,
+    HlmCardTitle,
+    HlmCardDescription,
+    HlmCardContent,
+    HlmAlert,
+    HlmAlertIcon,
+    HlmAlertDescription,
+    HlmSeparator,
+    HlmSpinner,
+  ],
+  viewProviders: [
+    provideIcons({
+      lucideRocket,
+      lucideCircleAlert,
+      lucideEye,
+      lucideEyeOff,
+      lucideLogIn,
+      lucideUserPlus,
+    }),
+  ],
   template: `
-    <div class="tw:min-h-screen tw:flex tw:items-center tw:justify-center tw:bg-base-200 tw:px-4">
-      <div class="tw:card tw:w-full tw:max-w-md tw:bg-base-100 tw:shadow-xl">
-        <div class="tw:card-body tw:p-8">
-          <div class="tw:flex tw:items-center tw:justify-center tw:gap-2 tw:mb-2">
-            <iconify-icon
-              icon="mdi:rocket-launch-outline"
-              width="32"
-              class="tw:text-primary"
-            ></iconify-icon>
-            <span class="tw:text-2xl tw:font-bold tw:text-primary">CLIuno</span>
+    <div class="flex min-h-screen items-center justify-center bg-background px-4">
+      <div hlmCard class="w-full max-w-sm">
+        <div hlmCardHeader class="items-center text-center">
+          <div class="mb-2 flex items-center justify-center gap-2">
+            <ng-icon name="lucideRocket" size="28px" class="text-primary" />
+            <span class="text-xl font-bold">CLIuno</span>
           </div>
+          <h2 hlmCardTitle class="text-2xl">Welcome back</h2>
+          <p hlmCardDescription>Sign in to your account</p>
+        </div>
 
-          <h2 class="tw:text-2xl tw:font-bold tw:text-center tw:mb-1">Welcome back</h2>
-          <p class="tw:text-center tw:text-base-content/60 tw:mb-6">Sign in to your account</p>
-
+        <div hlmCardContent>
           @if (authStore.error()) {
-            <div class="tw:alert tw:alert-error tw:mb-4">
-              <iconify-icon icon="mdi:alert-circle" width="20"></iconify-icon>
-              <span>{{ authStore.error() }}</span>
+            <div hlmAlert variant="destructive" class="mb-4">
+              <ng-icon hlmAlertIcon name="lucideCircleAlert" />
+              <p hlmAlertDescription>{{ authStore.error() }}</p>
             </div>
           }
 
-          <form (ngSubmit)="handleLogin()" class="tw:space-y-4">
-            <fieldset class="tw:fieldset">
-              <legend class="tw:fieldset-legend">Email or Username</legend>
-              <div class="tw:input tw:w-full">
-                <iconify-icon
-                  icon="mdi:account-outline"
-                  width="16"
-                  class="tw:opacity-50"
-                ></iconify-icon>
-                <input
-                  [(ngModel)]="usernameOrEmail"
-                  name="usernameOrEmail"
-                  type="text"
-                  placeholder="Enter your email or username"
-                  class="tw:grow"
-                  required
-                />
-              </div>
-            </fieldset>
+          <form (ngSubmit)="handleLogin()" class="space-y-4">
+            <div class="space-y-2">
+              <label hlmLabel for="usernameOrEmail">Email or Username</label>
+              <input
+                hlmInput
+                id="usernameOrEmail"
+                [(ngModel)]="usernameOrEmail"
+                name="usernameOrEmail"
+                type="text"
+                placeholder="Enter your email or username"
+                class="w-full"
+                required
+              />
+            </div>
 
-            <fieldset class="tw:fieldset">
-              <legend class="tw:fieldset-legend">Password</legend>
-              <div class="tw:input tw:w-full">
-                <iconify-icon
-                  icon="mdi:lock-outline"
-                  width="16"
-                  class="tw:opacity-50"
-                ></iconify-icon>
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <label hlmLabel for="password">Password</label>
+                <a routerLink="/forgot-password" class="text-sm text-primary hover:underline">
+                  Forgot password?
+                </a>
+              </div>
+              <div class="relative">
                 <input
+                  hlmInput
+                  id="password"
                   [(ngModel)]="password"
                   name="password"
                   [type]="showPassword ? 'text' : 'password'"
                   placeholder="Enter your password"
-                  class="tw:grow"
+                  class="w-full pr-10"
                   required
                 />
                 <button
                   type="button"
                   (click)="showPassword = !showPassword"
-                  class="tw:btn tw:btn-ghost tw:btn-xs tw:btn-circle"
+                  class="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
                 >
-                  <iconify-icon
-                    [icon]="showPassword ? 'mdi:eye-off' : 'mdi:eye'"
-                    width="16"
-                  ></iconify-icon>
+                  <ng-icon [name]="showPassword ? 'lucideEyeOff' : 'lucideEye'" size="16px" />
                 </button>
               </div>
-            </fieldset>
-
-            <div class="tw:flex tw:justify-end">
-              <a routerLink="/forgot-password" class="tw:link tw:link-primary tw:text-sm"
-                >Forgot password?</a
-              >
             </div>
 
-            <button
-              type="submit"
-              class="tw:btn tw:btn-primary tw:w-full"
-              [class.tw:loading]="authStore.loading()"
-              [disabled]="authStore.loading()"
-            >
-              @if (!authStore.loading()) {
-                <iconify-icon icon="mdi:login" width="20"></iconify-icon>
+            <button type="submit" hlmBtn class="w-full" [disabled]="authStore.loading()">
+              @if (authStore.loading()) {
+                <hlm-spinner class="size-4" />
+              } @else {
+                <ng-icon name="lucideLogIn" size="18px" />
               }
               {{ authStore.loading() ? 'Signing in...' : 'Sign In' }}
             </button>
           </form>
 
-          <div class="tw:divider tw:text-sm">Don't have an account?</div>
+          <div class="my-6 flex items-center gap-3">
+            <hlm-separator class="flex-1" />
+            <span class="text-xs text-muted-foreground">Don't have an account?</span>
+            <hlm-separator class="flex-1" />
+          </div>
 
-          <a routerLink="/register" class="tw:btn tw:btn-outline tw:btn-secondary tw:w-full">
-            <iconify-icon icon="mdi:account-plus-outline" width="20"></iconify-icon>
+          <a routerLink="/register" hlmBtn variant="outline" class="w-full">
+            <ng-icon name="lucideUserPlus" size="18px" />
             Create Account
           </a>
         </div>

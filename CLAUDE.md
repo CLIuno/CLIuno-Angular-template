@@ -33,4 +33,6 @@ this contract. Keep all URLs inside the services.
 - oxc tooling: `oxlint` + `oxfmt` (`semi: false`, single quotes); prettier for
   html/scss/md. No angular-eslint.
 - **TypeScript stays <5.7** (Angular 19 pins it) — don't bump to 6.x here.
-- Conventional commits (commitlint + husky); Tailwind v4 + daisyUI with `tw:` prefix.
+- Conventional commits (commitlint + husky); Tailwind v4 + **spartan-ng helm
+  components** (shadcn-style, Brain primitives) in `src/app/ui/`, css-variable theme in
+  `src/styles.css`, dark mode = `.dark` class; add with `ng g @spartan-ng/cli:ui <name>`.

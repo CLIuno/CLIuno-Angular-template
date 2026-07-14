@@ -4,10 +4,8 @@ import { Component } from '@angular/core'
   selector: 'app-footer',
   standalone: true,
   template: `
-    <footer class="tw:footer tw:footer-center tw:p-4 tw:bg-base-200 tw:text-base-content">
-      <div>
-        <p>&copy; {{ currentYear }} — Built with 💖 using Angular</p>
-      </div>
+    <footer class="border-t py-4 text-center text-sm text-muted-foreground">
+      <p>&copy; {{ currentYear }} — Built with 💖 using Angular</p>
     </footer>
   `,
 })

@@ -1,97 +1,117 @@
-import { Component, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core'
+import { Component, OnInit } from '@angular/core'
 import { ActivatedRoute, RouterLink } from '@angular/router'
+import { NgIcon, provideIcons } from '@ng-icons/core'
+import { lucideMail, lucideUserCheck, lucideUserPlus } from '@ng-icons/lucide'
 import { UserApiService } from '../../services/user-api.service'
 import { FollowApiService } from '../../services/follow-api.service'
 import { AuthStore } from '../../services/auth.store'
 import { User } from '../../types/models'
+import { HlmButton } from '@spartan-ng/helm/button'
+import { HlmCard, HlmCardContent } from '@spartan-ng/helm/card'
+import { HlmSpinner } from '@spartan-ng/helm/spinner'
+import { HlmAvatar, HlmAvatarFallback } from '@spartan-ng/helm/avatar'
 
 @Component({
   selector: 'app-user-profile',
   standalone: true,
-  imports: [RouterLink],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [
+    RouterLink,
+    NgIcon,
+    HlmButton,
+    HlmCard,
+    HlmCardContent,
+    HlmSpinner,
+    HlmAvatar,
+    HlmAvatarFallback,
+  ],
+  viewProviders: [provideIcons({ lucideMail, lucideUserCheck, lucideUserPlus })],
   template: `
-    <div class="tw:max-w-3xl tw:mx-auto tw:px-4 tw:py-8">
+    <div class="mx-auto max-w-3xl px-4 py-8">
       @if (loading) {
-        <div class="tw:flex tw:justify-center tw:py-20">
-          <span class="tw:loading tw:loading-spinner tw:loading-lg tw:text-primary"></span>
+        <div class="flex justify-center py-20">
+          <hlm-spinner class="size-8 text-primary" />
         </div>
       }
 
       @if (!loading && user) {
         <!-- Profile Card -->
-        <div class="tw:card tw:bg-base-100 tw:shadow-lg tw:overflow-hidden">
+        <div hlmCard class="overflow-hidden">
           <!-- Cover -->
-          <div class="tw:h-32 tw:bg-gradient-to-r tw:from-primary tw:to-secondary"></div>
+          <div class="-mt-6 h-32 bg-gradient-to-r from-primary to-muted-foreground"></div>
 
-          <div class="tw:card-body tw:-mt-16">
-            <div class="tw:flex tw:items-end tw:gap-4 tw:mb-4">
-              <div class="tw:avatar tw:placeholder">
-                <div
-                  class="tw:bg-neutral tw:text-neutral-content tw:w-24 tw:h-24 tw:rounded-full tw:ring tw:ring-base-100 tw:ring-4"
+          <div hlmCardContent class="-mt-16">
+            <div class="mb-4 flex items-end gap-4">
+              <hlm-avatar class="size-24 ring-4 ring-background">
+                <span hlmAvatarFallback class="text-3xl"
+                  >{{ user.first_name[0] }}{{ user.last_name[0] }}</span
                 >
-                  <span class="tw:text-3xl">{{ user.first_name[0] }}{{ user.last_name[0] }}</span>
-                </div>
-              </div>
-              <div class="tw:flex-1">
-                <h1 class="tw:text-2xl tw:font-bold">{{ user.first_name }} {{ user.last_name }}</h1>
-                <p class="tw:text-base-content/60">&#64;{{ user.username }}</p>
+              </hlm-avatar>
+              <div class="flex-1">
+                <h1 class="text-2xl font-bold">{{ user.first_name }} {{ user.last_name }}</h1>
+                <p class="text-muted-foreground">&#64;{{ user.username }}</p>
               </div>
               @if (user.id !== authStore.user()?.id) {
                 <button
+                  type="button"
+                  hlmBtn
+                  size="sm"
+                  [variant]="isFollowing ? 'outline' : 'default'"
                   (click)="toggleFollow()"
-                  class="tw:btn tw:btn-sm"
-                  [class.tw:btn-outline]="isFollowing"
-                  [class.tw:btn-primary]="!isFollowing"
                 >
-                  <iconify-icon
-                    [icon]="isFollowing ? 'mdi:account-check' : 'mdi:account-plus'"
-                    width="16"
-                  ></iconify-icon>
+                  <ng-icon
+                    [name]="isFollowing ? 'lucideUserCheck' : 'lucideUserPlus'"
+                    size="16px"
+                  />
                   {{ isFollowing ? 'Following' : 'Follow' }}
                 </button>
               }
             </div>
 
             @if (user.email) {
-              <p class="tw:text-base-content/70 tw:flex tw:items-center tw:gap-2">
-                <iconify-icon icon="mdi:email-outline" width="16"></iconify-icon>
+              <p class="flex items-center gap-2 text-muted-foreground">
+                <ng-icon name="lucideMail" size="16px" />
                 {{ user.email }}
               </p>
             }
 
             <!-- Stats -->
-            <div class="tw:flex tw:gap-6 tw:mt-4">
+            <div class="mt-4 flex gap-6">
               <button
+                type="button"
                 (click)="activeTab = 'followers'"
-                class="tw:cursor-pointer hover:tw:text-primary tw:transition-colors"
+                class="cursor-pointer transition-colors hover:text-primary"
               >
-                <span class="tw:font-bold">{{ followers.length }}</span>
-                <span class="tw:text-base-content/60 tw:ml-1">Followers</span>
+                <span class="font-bold">{{ followers.length }}</span>
+                <span class="ml-1 text-muted-foreground">Followers</span>
               </button>
               <button
+                type="button"
                 (click)="activeTab = 'following'"
-                class="tw:cursor-pointer hover:tw:text-primary tw:transition-colors"
+                class="cursor-pointer transition-colors hover:text-primary"
               >
-                <span class="tw:font-bold">{{ following.length }}</span>
-                <span class="tw:text-base-content/60 tw:ml-1">Following</span>
+                <span class="font-bold">{{ following.length }}</span>
+                <span class="ml-1 text-muted-foreground">Following</span>
               </button>
             </div>
           </div>
         </div>
 
         <!-- Tabs -->
-        <div class="tw:tabs tw:tabs-boxed tw:mt-6 tw:mb-4 tw:w-fit">
+        <div class="mt-6 mb-4 inline-flex w-fit items-center gap-1 rounded-md border p-1">
           <button
-            class="tw:tab"
-            [class.tw:tab-active]="activeTab === 'followers'"
+            type="button"
+            hlmBtn
+            [variant]="activeTab === 'followers' ? 'default' : 'ghost'"
+            size="sm"
             (click)="activeTab = 'followers'"
           >
             Followers
           </button>
           <button
-            class="tw:tab"
-            [class.tw:tab-active]="activeTab === 'following'"
+            type="button"
+            hlmBtn
+            [variant]="activeTab === 'following' ? 'default' : 'ghost'"
+            size="sm"
             (click)="activeTab = 'following'"
           >
             Following
@@ -99,30 +119,23 @@ import { User } from '../../types/models'
         </div>
 
         <!-- Followers/Following List -->
-        <div class="tw:space-y-3">
+        <div class="space-y-3">
           @for (person of activeTab === 'followers' ? followers : following; track person.id) {
-            <div class="tw:card tw:bg-base-100 tw:shadow-sm">
-              <div class="tw:card-body tw:p-4 tw:flex tw:flex-row tw:items-center tw:gap-4">
-                <div class="tw:avatar tw:placeholder">
-                  <div
-                    class="tw:bg-primary tw:text-primary-content tw:w-10 tw:h-10 tw:rounded-full"
-                  >
-                    <span>{{ person.first_name[0] }}{{ person.last_name[0] }}</span>
-                  </div>
-                </div>
-                <div class="tw:flex-1">
-                  <a
-                    [routerLink]="['/users', person.id]"
-                    class="tw:font-semibold hover:tw:text-primary"
-                  >
+            <div hlmCard>
+              <div hlmCardContent class="flex flex-row items-center gap-4">
+                <hlm-avatar class="size-10 shrink-0">
+                  <span hlmAvatarFallback>{{ person.first_name[0] }}{{ person.last_name[0] }}</span>
+                </hlm-avatar>
+                <div class="min-w-0 flex-1">
+                  <a [routerLink]="['/users', person.id]" class="font-semibold hover:text-primary">
                     {{ person.first_name }} {{ person.last_name }}
                   </a>
-                  <p class="tw:text-sm tw:text-base-content/50">&#64;{{ person.username }}</p>
+                  <p class="text-sm text-muted-foreground">&#64;{{ person.username }}</p>
                 </div>
               </div>
             </div>
           } @empty {
-            <div class="tw:text-center tw:py-8 tw:text-base-content/40">
+            <div class="py-8 text-center text-muted-foreground/70">
               <p>No {{ activeTab }} yet</p>
             </div>
           }

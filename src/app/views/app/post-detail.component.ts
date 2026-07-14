@@ -1,80 +1,126 @@
-import { Component, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core'
+import { Component, OnInit } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { ActivatedRoute, RouterLink } from '@angular/router'
+import { NgIcon, provideIcons } from '@ng-icons/core'
+import {
+  lucideArrowLeft,
+  lucidePencil,
+  lucideUser,
+  lucideMessagesSquare,
+  lucideMessageCircleOff,
+  lucideSend,
+  lucideTrash2,
+} from '@ng-icons/lucide'
 import { PostApiService } from '../../services/post-api.service'
 import { AuthStore } from '../../services/auth.store'
 import { timeAgo } from '../../utils/helpers'
 import { Post, Comment } from '../../types/models'
+import { HlmButton } from '@spartan-ng/helm/button'
+import { HlmCard, HlmCardContent } from '@spartan-ng/helm/card'
+import { HlmInput } from '@spartan-ng/helm/input'
+import { HlmTextarea } from '@spartan-ng/helm/textarea'
+import { HlmSpinner } from '@spartan-ng/helm/spinner'
+import { HlmSeparator } from '@spartan-ng/helm/separator'
+import { HlmAvatar, HlmAvatarFallback } from '@spartan-ng/helm/avatar'
 
 @Component({
   selector: 'app-post-detail',
   standalone: true,
-  imports: [FormsModule, RouterLink],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [
+    FormsModule,
+    RouterLink,
+    NgIcon,
+    HlmButton,
+    HlmCard,
+    HlmCardContent,
+    HlmInput,
+    HlmTextarea,
+    HlmSpinner,
+    HlmSeparator,
+    HlmAvatar,
+    HlmAvatarFallback,
+  ],
+  viewProviders: [
+    provideIcons({
+      lucideArrowLeft,
+      lucidePencil,
+      lucideUser,
+      lucideMessagesSquare,
+      lucideMessageCircleOff,
+      lucideSend,
+      lucideTrash2,
+    }),
+  ],
   template: `
-    <div class="tw:max-w-3xl tw:mx-auto tw:px-4 tw:py-8">
-      <a routerLink="/posts" class="tw:btn tw:btn-ghost tw:btn-sm tw:mb-6">
-        <iconify-icon icon="mdi:arrow-left" width="20"></iconify-icon>
+    <div class="mx-auto max-w-3xl px-4 py-8">
+      <a routerLink="/posts" hlmBtn variant="ghost" size="sm" class="mb-6">
+        <ng-icon name="lucideArrowLeft" size="18px" />
         Back to Posts
       </a>
 
       @if (loading) {
-        <div class="tw:flex tw:justify-center tw:py-20">
-          <span class="tw:loading tw:loading-spinner tw:loading-lg tw:text-primary"></span>
+        <div class="flex justify-center py-20">
+          <hlm-spinner class="size-8 text-primary" />
         </div>
       }
 
       @if (!loading && post) {
         <!-- Detail Card -->
-        <div class="tw:card tw:bg-base-100 tw:shadow-lg tw:mb-6">
-          <div class="tw:card-body">
+        <div hlmCard class="mb-6">
+          <div hlmCardContent>
             @if (!editing) {
-              <div class="tw:flex tw:items-start tw:justify-between">
+              <div class="flex items-start justify-between gap-4">
                 <div>
-                  <h1 class="tw:text-2xl tw:font-bold">{{ post.title }}</h1>
+                  <h1 class="text-2xl font-bold">{{ post.title }}</h1>
                   @if (post.content) {
-                    <p class="tw:mt-3 tw:text-base-content/70">{{ post.content }}</p>
+                    <p class="mt-3 text-muted-foreground">{{ post.content }}</p>
                   }
                 </div>
                 @if (post.user.id === authStore.user()?.id) {
-                  <div class="tw:flex tw:gap-2">
-                    <button (click)="startEdit()" class="tw:btn tw:btn-sm tw:btn-outline">
-                      <iconify-icon icon="mdi:pencil" width="16"></iconify-icon>
-                    </button>
-                  </div>
+                  <button type="button" hlmBtn size="sm" variant="outline" (click)="startEdit()">
+                    <ng-icon name="lucidePencil" size="16px" />
+                  </button>
                 }
               </div>
             } @else {
-              <form (ngSubmit)="saveEdit()" class="tw:space-y-4">
+              <form (ngSubmit)="saveEdit()" class="space-y-4">
                 <input
+                  hlmInput
                   [(ngModel)]="editTitle"
                   name="editTitle"
                   type="text"
-                  class="tw:input tw:input-bordered tw:w-full tw:text-xl tw:font-bold"
+                  class="w-full text-xl font-bold"
                 />
                 <textarea
+                  hlmTextarea
                   [(ngModel)]="editContent"
                   name="editContent"
-                  class="tw:textarea tw:textarea-bordered tw:w-full"
+                  class="w-full"
                   rows="5"
                 ></textarea>
-                <div class="tw:flex tw:gap-2 tw:justify-end">
-                  <button type="button" (click)="editing = false" class="tw:btn tw:btn-sm">
+                <div class="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    hlmBtn
+                    variant="outline"
+                    size="sm"
+                    (click)="editing = false"
+                  >
                     Cancel
                   </button>
-                  <button type="submit" class="tw:btn tw:btn-sm tw:btn-primary">Save</button>
+                  <button type="submit" hlmBtn size="sm">Save</button>
                 </div>
               </form>
             }
 
-            <div
-              class="tw:flex tw:items-center tw:gap-4 tw:mt-4 tw:pt-4 tw:border-t tw:border-base-200 tw:text-sm tw:text-base-content/50"
-            >
+            <hlm-separator class="my-4" />
+
+            <div class="flex items-center gap-4 text-sm text-muted-foreground">
               <a
                 [routerLink]="['/users', post.user.id]"
-                class="tw:flex tw:items-center tw:gap-1 hover:tw:text-primary"
+                class="flex items-center gap-1 hover:text-primary"
               >
-                <iconify-icon icon="mdi:account" width="16"></iconify-icon>
+                <ng-icon name="lucideUser" size="16px" />
                 {{ post.user.first_name }} {{ post.user.last_name }} (&#64;{{ post.user.username }})
               </a>
               <span>{{ timeAgo(post.createdAt) }}</span>
@@ -83,106 +129,116 @@ import { Post, Comment } from '../../types/models'
         </div>
 
         <!-- Comments Section -->
-        <div class="tw:card tw:bg-base-100 tw:shadow-lg">
-          <div class="tw:card-body">
-            <h2 class="tw:text-xl tw:font-bold tw:mb-4">
-              <iconify-icon
-                icon="mdi:comment-multiple-outline"
-                width="24"
-                class="tw:inline tw:mr-1"
-              ></iconify-icon>
+        <div hlmCard>
+          <div hlmCardContent>
+            <h2 class="mb-4 flex items-center gap-1.5 text-xl font-bold">
+              <ng-icon name="lucideMessagesSquare" size="22px" />
               Comments ({{ post.comments.length }})
             </h2>
 
             <!-- Add Comment -->
-            <form (ngSubmit)="addComment()" class="tw:mb-6">
-              <div class="tw:flex tw:gap-2">
-                <input
-                  [(ngModel)]="newComment"
-                  name="newComment"
-                  type="text"
-                  placeholder="Write a comment..."
-                  class="tw:input tw:input-bordered tw:flex-1"
-                  required
-                />
-                <button type="submit" class="tw:btn tw:btn-primary" [disabled]="submittingComment">
-                  <iconify-icon icon="mdi:send" width="20"></iconify-icon>
-                </button>
-              </div>
+            <form (ngSubmit)="addComment()" class="mb-6 flex gap-2">
+              <input
+                hlmInput
+                [(ngModel)]="newComment"
+                name="newComment"
+                type="text"
+                placeholder="Write a comment..."
+                class="flex-1"
+                required
+              />
+              <button
+                type="submit"
+                hlmBtn
+                size="icon"
+                [disabled]="submittingComment"
+                aria-label="Send comment"
+              >
+                <ng-icon name="lucideSend" size="18px" />
+              </button>
             </form>
 
             @if (!post.comments.length) {
-              <div class="tw:text-center tw:py-8 tw:text-base-content/40">
-                <iconify-icon
-                  icon="mdi:comment-off-outline"
-                  width="40"
-                  class="tw:mx-auto tw:mb-2"
-                ></iconify-icon>
+              <div class="py-8 text-center text-muted-foreground/70">
+                <ng-icon name="lucideMessageCircleOff" size="40px" class="mx-auto mb-2" />
                 <p>No comments yet. Be the first!</p>
               </div>
             }
 
             @if (post.comments.length) {
-              <div class="tw:space-y-4">
+              <div class="space-y-4">
                 @for (comment of post.comments; track comment.id) {
-                  <div class="tw:flex tw:gap-3">
-                    <div class="tw:avatar tw:placeholder">
-                      <div
-                        class="tw:bg-neutral tw:text-neutral-content tw:w-8 tw:h-8 tw:rounded-full"
-                      >
-                        <span class="tw:text-xs"
-                          >{{ comment.user.first_name[0] }}{{ comment.user.last_name[0] }}</span
-                        >
-                      </div>
-                    </div>
-                    <div class="tw:flex-1 tw:bg-base-200 tw:rounded-lg tw:p-3">
-                      <div class="tw:flex tw:items-center tw:justify-between tw:mb-1">
+                  <div class="flex gap-3">
+                    <hlm-avatar class="size-8 shrink-0">
+                      <span hlmAvatarFallback class="text-xs">
+                        {{ comment.user.first_name[0] }}{{ comment.user.last_name[0] }}
+                      </span>
+                    </hlm-avatar>
+                    <div class="flex-1 rounded-lg bg-muted p-3">
+                      <div class="mb-1 flex items-center justify-between">
                         <a
                           [routerLink]="['/users', comment.user.id]"
-                          class="tw:font-semibold tw:text-sm hover:tw:text-primary"
+                          class="text-sm font-semibold hover:text-primary"
                         >
                           {{ comment.user.username }}
                         </a>
-                        <div class="tw:flex tw:items-center tw:gap-2">
-                          <span class="tw:text-xs tw:text-base-content/50">{{
+                        <div class="flex items-center gap-2">
+                          <span class="text-xs text-muted-foreground">{{
                             timeAgo(comment.createdAt)
                           }}</span>
                           @if (comment.user.id === authStore.user()?.id) {
                             <button
+                              type="button"
+                              hlmBtn
+                              variant="ghost"
+                              size="icon-sm"
                               (click)="startEditComment(comment)"
-                              class="tw:btn tw:btn-ghost tw:btn-xs"
+                              aria-label="Edit comment"
                             >
-                              <iconify-icon icon="mdi:pencil" width="12"></iconify-icon>
+                              <ng-icon name="lucidePencil" size="12px" />
                             </button>
                             <button
+                              type="button"
+                              hlmBtn
+                              variant="ghost"
+                              size="icon-sm"
                               (click)="deleteComment(comment.id)"
-                              class="tw:btn tw:btn-ghost tw:btn-xs tw:text-error"
+                              aria-label="Delete comment"
                             >
-                              <iconify-icon icon="mdi:delete" width="12"></iconify-icon>
+                              <ng-icon name="lucideTrash2" size="12px" />
                             </button>
                           }
                         </div>
                       </div>
 
                       @if (editingCommentId === comment.id) {
-                        <div class="tw:flex tw:gap-2">
+                        <div class="flex gap-2">
                           <input
+                            hlmInput
                             [(ngModel)]="editCommentContent"
                             name="editComment"
-                            class="tw:input tw:input-sm tw:input-bordered tw:flex-1"
+                            class="h-8 flex-1"
                           />
                           <button
+                            type="button"
+                            hlmBtn
+                            size="sm"
                             (click)="saveEditComment(comment.id)"
-                            class="tw:btn tw:btn-sm tw:btn-primary"
                           >
                             Save
                           </button>
-                          <button (click)="editingCommentId = null" class="tw:btn tw:btn-sm">
+                          <button
+                            type="button"
+                            hlmBtn
+                            variant="outline"
+                            size="sm"
+                            (click)="editingCommentId = null"
+                          >
                             Cancel
                           </button>
                         </div>
                       } @else {
-                        <p class="tw:text-sm">{{ comment.content }}</p>
+                        <p class="text-sm">{{ comment.content }}</p>
                       }
                     </div>
                   </div>
