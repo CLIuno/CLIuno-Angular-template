@@ -25,15 +25,10 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-        run: |
-          pnpm install
-          pnpm add -D @angular-eslint/builder @angular-eslint/eslint-plugin @angular-eslint/eslint-plugin-template @angular-eslint/template-parser
-
-      - name: Install Angular CLI
-        run: pnpm add -g @angular/cli
+        run: pnpm install
 
       - name: Lint
-        run: pnpm ng lint
+        run: pnpm lint
 
       - name: Build
         run: pnpm build
