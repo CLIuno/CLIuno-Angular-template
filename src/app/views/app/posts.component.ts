@@ -10,6 +10,7 @@ import {
   lucideTrash2,
 } from '@ng-icons/lucide'
 import { PostApiService } from '../../services/post-api.service'
+import { UploadApiService } from '../../services/upload-api.service'
 import { AuthStore } from '../../services/auth.store'
 import { timeAgo } from '../../utils/helpers'
 import { Post } from '../../types/models'
@@ -99,6 +100,49 @@ import { BrnDialogTrigger, BrnDialogContent, BrnDialogClose } from '@spartan-ng/
                   required
                 ></textarea>
               </div>
+              <div class="space-y-2">
+                <label hlmLabel>Image</label>
+                <div class="flex items-center gap-3">
+                  <input
+                    #postImageInput
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    class="hidden"
+                    (change)="onImagePicked($event)"
+                  />
+                  <button
+                    type="button"
+                    hlmBtn
+                    size="sm"
+                    variant="outline"
+                    [disabled]="uploading"
+                    (click)="postImageInput.click()"
+                  >
+                    {{ uploading ? 'Uploading…' : newImageUrl ? 'Replace image' : 'Add image' }}
+                  </button>
+                  @if (newImageUrl) {
+                    <button
+                      type="button"
+                      hlmBtn
+                      size="sm"
+                      variant="ghost"
+                      (click)="newImageUrl = ''"
+                    >
+                      Remove
+                    </button>
+                  }
+                </div>
+                @if (newImageUrl) {
+                  <img
+                    [src]="newImageUrl"
+                    alt="Selected preview"
+                    class="max-h-40 rounded-md border object-cover"
+                  />
+                }
+                @if (uploadError) {
+                  <p class="text-sm text-destructive">{{ uploadError }}</p>
+                }
+              </div>
               <hlm-dialog-footer>
                 <button type="button" brnDialogClose hlmBtn variant="outline">Cancel</button>
                 <button type="submit" hlmBtn [disabled]="creating">
@@ -165,6 +209,13 @@ import { BrnDialogTrigger, BrnDialogContent, BrnDialogClose } from '@spartan-ng/
                       {{ post.content }}
                     </p>
                   }
+                  @if (post.image_url) {
+                    <img
+                      [src]="post.image_url"
+                      [alt]="post.title"
+                      class="mt-2 max-h-64 w-full rounded-md border object-cover"
+                    />
+                  }
                   <div class="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
                     <a
                       [routerLink]="['/users', post.user.id]"
@@ -206,14 +257,40 @@ export class PostsComponent implements OnInit {
   loading = true
   newTitle = ''
   newContent = ''
+  newImageUrl = ''
+  uploading = false
+  uploadError: string | null = null
   creating = false
   filter: 'all' | 'mine' = 'all'
   timeAgo = timeAgo
 
   constructor(
     private readonly postApi: PostApiService,
+    private readonly uploadApi: UploadApiService,
     public authStore: AuthStore,
   ) {}
+
+  onImagePicked(event: Event) {
+    const input = event.target as HTMLInputElement
+    const file = input.files?.[0]
+    if (!file) return
+
+    this.uploading = true
+    this.uploadError = null
+    this.uploadApi.uploadImage(file).subscribe({
+      next: (res) => {
+        this.newImageUrl = res.data.url
+        this.uploading = false
+      },
+      error: () => {
+        this.uploadError = 'Upload failed'
+        this.uploading = false
+      },
+    })
+
+    // reset so re-picking the same file still fires change
+    input.value = ''
+  }
 
   get filteredPosts(): Post[] {
     if (this.filter === 'mine')
@@ -241,18 +318,25 @@ export class PostsComponent implements OnInit {
   createPost(dialog: { close: () => void }) {
     if (!this.newTitle.trim() || !this.newContent.trim()) return
     this.creating = true
-    this.postApi.createPost({ title: this.newTitle, content: this.newContent }).subscribe({
-      next: () => {
-        this.newTitle = ''
-        this.newContent = ''
-        this.creating = false
-        dialog.close()
-        this.fetchPosts()
-      },
-      error: () => {
-        this.creating = false
-      },
-    })
+    this.postApi
+      .createPost({
+        title: this.newTitle,
+        content: this.newContent,
+        ...(this.newImageUrl ? { image_url: this.newImageUrl } : {}),
+      })
+      .subscribe({
+        next: () => {
+          this.newTitle = ''
+          this.newContent = ''
+          this.newImageUrl = ''
+          this.creating = false
+          dialog.close()
+          this.fetchPosts()
+        },
+        error: () => {
+          this.creating = false
+        },
+      })
   }
 
   deletePost(id: string) {

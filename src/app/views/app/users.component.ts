@@ -9,7 +9,7 @@ import { User } from '../../types/models'
 import { HlmButton } from '@spartan-ng/helm/button'
 import { HlmCard, HlmCardContent } from '@spartan-ng/helm/card'
 import { HlmSpinner } from '@spartan-ng/helm/spinner'
-import { HlmAvatar, HlmAvatarFallback } from '@spartan-ng/helm/avatar'
+import { HlmAvatar, HlmAvatarFallback, HlmAvatarImage } from '@spartan-ng/helm/avatar'
 
 @Component({
   selector: 'app-users',
@@ -23,6 +23,7 @@ import { HlmAvatar, HlmAvatarFallback } from '@spartan-ng/helm/avatar'
     HlmSpinner,
     HlmAvatar,
     HlmAvatarFallback,
+    HlmAvatarImage,
   ],
   viewProviders: [provideIcons({ lucideUsers, lucideUserCheck, lucideUserPlus })],
   template: `
@@ -51,6 +52,9 @@ import { HlmAvatar, HlmAvatarFallback } from '@spartan-ng/helm/avatar'
             <div hlmCard class="transition-shadow hover:shadow-md">
               <div hlmCardContent class="flex flex-row items-center gap-4">
                 <hlm-avatar class="size-12 shrink-0">
+                  @if (user.avatar_url) {
+                    <img hlmAvatarImage [src]="user.avatar_url" [alt]="user.username" />
+                  }
                   <span hlmAvatarFallback class="text-lg"
                     >{{ user.first_name[0] }}{{ user.last_name[0] }}</span
                   >

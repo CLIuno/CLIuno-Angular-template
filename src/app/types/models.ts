@@ -5,6 +5,7 @@ export interface User {
   last_name: string
   email: string
   phone: string
+  avatar_url?: string | null
   is_verified: boolean
 }
 
@@ -22,6 +23,7 @@ export interface Post {
   id: string
   title: string
   content?: string
+  image_url?: string | null
   user: User
   comments: Comment[]
   createdAt: string

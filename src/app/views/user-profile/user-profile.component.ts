@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core'
 import { ActivatedRoute, RouterLink } from '@angular/router'
 import { NgIcon, provideIcons } from '@ng-icons/core'
 import { lucideMail, lucideUserCheck, lucideUserPlus } from '@ng-icons/lucide'
+import { UploadApiService } from '../../services/upload-api.service'
 import { UserApiService } from '../../services/user-api.service'
 import { FollowApiService } from '../../services/follow-api.service'
 import { AuthStore } from '../../services/auth.store'
@@ -9,7 +10,7 @@ import { User } from '../../types/models'
 import { HlmButton } from '@spartan-ng/helm/button'
 import { HlmCard, HlmCardContent } from '@spartan-ng/helm/card'
 import { HlmSpinner } from '@spartan-ng/helm/spinner'
-import { HlmAvatar, HlmAvatarFallback } from '@spartan-ng/helm/avatar'
+import { HlmAvatar, HlmAvatarFallback, HlmAvatarImage } from '@spartan-ng/helm/avatar'
 
 @Component({
   selector: 'app-user-profile',
@@ -23,6 +24,7 @@ import { HlmAvatar, HlmAvatarFallback } from '@spartan-ng/helm/avatar'
     HlmSpinner,
     HlmAvatar,
     HlmAvatarFallback,
+    HlmAvatarImage,
   ],
   viewProviders: [provideIcons({ lucideMail, lucideUserCheck, lucideUserPlus })],
   template: `
@@ -41,14 +43,42 @@ import { HlmAvatar, HlmAvatarFallback } from '@spartan-ng/helm/avatar'
 
           <div hlmCardContent class="-mt-16">
             <div class="mb-4 flex items-end gap-4">
-              <hlm-avatar class="size-24 ring-4 ring-background">
-                <span hlmAvatarFallback class="text-3xl"
-                  >{{ user.first_name[0] }}{{ user.last_name[0] }}</span
-                >
-              </hlm-avatar>
+              <div class="flex flex-col items-center gap-2">
+                <hlm-avatar class="size-24 ring-4 ring-background">
+                  @if (user.avatar_url) {
+                    <img hlmAvatarImage [src]="user.avatar_url" [alt]="user.username" />
+                  }
+                  <span hlmAvatarFallback class="text-3xl"
+                    >{{ user.first_name[0] }}{{ user.last_name[0] }}</span
+                  >
+                </hlm-avatar>
+
+                @if (user.id === authStore.user()?.id) {
+                  <input
+                    #avatarInput
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    class="hidden"
+                    (change)="onAvatarPicked($event)"
+                  />
+                  <button
+                    type="button"
+                    hlmBtn
+                    size="sm"
+                    variant="outline"
+                    [disabled]="uploading"
+                    (click)="avatarInput.click()"
+                  >
+                    {{ uploading ? 'Uploading…' : 'Change photo' }}
+                  </button>
+                }
+              </div>
               <div class="flex-1">
                 <h1 class="text-2xl font-bold">{{ user.first_name }} {{ user.last_name }}</h1>
                 <p class="text-muted-foreground">&#64;{{ user.username }}</p>
+                @if (uploadError) {
+                  <p class="mt-1 text-sm text-destructive">{{ uploadError }}</p>
+                }
               </div>
               @if (user.id !== authStore.user()?.id) {
                 <button
@@ -151,13 +181,48 @@ export class UserProfileComponent implements OnInit {
   followers: User[] = []
   following: User[] = []
   activeTab: 'followers' | 'following' = 'followers'
+  uploading = false
+  uploadError: string | null = null
 
   constructor(
     private readonly route: ActivatedRoute,
     private readonly userApi: UserApiService,
     private readonly followApi: FollowApiService,
+    private readonly uploadApi: UploadApiService,
     public authStore: AuthStore,
   ) {}
+
+  onAvatarPicked(event: Event) {
+    const input = event.target as HTMLInputElement
+    const file = input.files?.[0]
+    if (!file) return
+
+    this.uploading = true
+    this.uploadError = null
+    this.uploadApi.uploadImage(file).subscribe({
+      next: (res) => {
+        const url = res.data.url
+        this.userApi.updateCurrentUser({ avatar_url: url }).subscribe({
+          next: () => {
+            if (this.user) this.user = { ...this.user, avatar_url: url }
+            this.authStore.fetchCurrentUser()
+            this.uploading = false
+          },
+          error: () => {
+            this.uploadError = 'Upload failed'
+            this.uploading = false
+          },
+        })
+      },
+      error: () => {
+        this.uploadError = 'Upload failed'
+        this.uploading = false
+      },
+    })
+
+    // reset so re-picking the same file still fires change
+    input.value = ''
+  }
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id') || this.authStore.user()?.id

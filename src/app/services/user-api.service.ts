@@ -10,6 +10,9 @@ export class UserApiService {
   getCurrentUser() {
     return this.http.get<ApiResponse<{ user: User }>>('/users/current')
   }
+  updateCurrentUser(userData: unknown) {
+    return this.http.patch<ApiResponse<{ user: User }>>('/users/current', userData)
+  }
   getUsers() {
     return this.http.get<ApiResponse<{ users: User[] }>>('/users')
   }

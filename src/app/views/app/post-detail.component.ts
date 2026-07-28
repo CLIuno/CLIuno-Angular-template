@@ -21,7 +21,7 @@ import { HlmInput } from '@spartan-ng/helm/input'
 import { HlmTextarea } from '@spartan-ng/helm/textarea'
 import { HlmSpinner } from '@spartan-ng/helm/spinner'
 import { HlmSeparator } from '@spartan-ng/helm/separator'
-import { HlmAvatar, HlmAvatarFallback } from '@spartan-ng/helm/avatar'
+import { HlmAvatar, HlmAvatarFallback, HlmAvatarImage } from '@spartan-ng/helm/avatar'
 
 @Component({
   selector: 'app-post-detail',
@@ -39,6 +39,7 @@ import { HlmAvatar, HlmAvatarFallback } from '@spartan-ng/helm/avatar'
     HlmSeparator,
     HlmAvatar,
     HlmAvatarFallback,
+    HlmAvatarImage,
   ],
   viewProviders: [
     provideIcons({
@@ -74,6 +75,13 @@ import { HlmAvatar, HlmAvatarFallback } from '@spartan-ng/helm/avatar'
                   <h1 class="text-2xl font-bold">{{ post.title }}</h1>
                   @if (post.content) {
                     <p class="mt-3 text-muted-foreground">{{ post.content }}</p>
+                  }
+                  @if (post.image_url) {
+                    <img
+                      [src]="post.image_url"
+                      [alt]="post.title"
+                      class="mt-3 max-h-96 w-full rounded-md border object-cover"
+                    />
                   }
                 </div>
                 @if (post.user.id === authStore.user()?.id) {
@@ -170,6 +178,13 @@ import { HlmAvatar, HlmAvatarFallback } from '@spartan-ng/helm/avatar'
                 @for (comment of post.comments; track comment.id) {
                   <div class="flex gap-3">
                     <hlm-avatar class="size-8 shrink-0">
+                      @if (comment.user.avatar_url) {
+                        <img
+                          hlmAvatarImage
+                          [src]="comment.user.avatar_url"
+                          [alt]="comment.user.username"
+                        />
+                      }
                       <span hlmAvatarFallback class="text-xs">
                         {{ comment.user.first_name[0] }}{{ comment.user.last_name[0] }}
                       </span>
